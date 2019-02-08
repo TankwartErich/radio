@@ -4,6 +4,9 @@ import mysql.connector
 from datetime import datetime, timedelta
 import time
 import traceback
+import configparser
+import argparse
+
 
 class PlaylistEntry:
   def __init__(self, song, artist, airdate):
@@ -20,15 +23,28 @@ def logger(text):
     date = datetime.now()
     print("[" + date.strftime("%d.%m.%Y %H:%M") + "] " + text + ".")
 
-def initOrSetDatabase():
+def parseArguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", help="Set path to config file.")
+    args = parser.parse_args()
+
+    return args 
+
+def parseConfiguration(filepath):
+    configParser = configparser.ConfigParser()
+    configParser.read(filepath)
+
+    return configParser
+
+def initOrSetDatabase(user,pwd):
 
     initDB = True
 
     database = mysql.connector.connect(
     host="127.0.0.1",
     port="3306",
-    user="root",
-    passwd="D5A\-$o{,B/r8$jPRkc]gz;H!."
+    user=user,
+    passwd=pwd
     )
 
     dbinfo = DBInfo(database, database.cursor())
@@ -165,8 +181,15 @@ def doEntriesExist(date, dbinfo):
 ###########
 
 try:
-    daysOfFuturePast = 20
-    dbinfo = initOrSetDatabase()
+    arguments = parseArguments()
+    config = parseConfiguration(arguments.config)
+
+    print(config['mysql']['user'])
+    print(config['mysql']['password'])
+    print(config['Default']['daysoffuturepast'])
+    
+    daysOfFuturePast = int(config['Default']['daysoffuturepast'])
+    dbinfo = initOrSetDatabase(config['mysql']['user'], config['mysql']['password'])
 
     dayCount = 1
     while dayCount < daysOfFuturePast+1:
